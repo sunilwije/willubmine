@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { API_URL } from "../config";
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -6,8 +7,8 @@ import { ProfileCard } from '../components/ProfileCard';
 import { ProfileModal } from '../components/ProfileModal';
 import { profiles as mockProfiles, Profile } from '../data/profiles';
 import { Heart, Globe, Shield, Users, Search } from 'lucide-react';
+import { API_URL } from '../config';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 const COUNTRIES = [
   { code: '', name: 'All Countries', flag: '🌍' },

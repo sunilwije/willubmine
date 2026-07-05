@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { API_URL } from "../config";
 import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Eye, EyeOff } from 'lucide-react';
+import { API_URL } from '../config';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const Login = () => {
   const navigate = useNavigate();

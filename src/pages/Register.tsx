@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import { API_URL } from "../config";
 import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 const COUNTRIES = [
   { code: 'US', name: 'United States', flag: '🇺🇸' },
