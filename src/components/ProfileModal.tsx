@@ -44,7 +44,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ profile, onClose }) 
                 <X className="h-6 w-6" />
               </button>
               <img
-                src={profile.imageUrl}
+                src={profile.image || profile.imageUrl || "https://via.placeholder.com/400"}
                 alt={profile.name}
                 className="w-full h-80 object-cover"
               />
