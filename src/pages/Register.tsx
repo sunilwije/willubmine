@@ -119,7 +119,6 @@ export const Register = () => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
     
-    // For demo, show code in alert (in production, send via email API)
     setTimeout(() => {
       setCodeSent(true);
       setLoading(false);
@@ -156,6 +155,7 @@ export const Register = () => {
     setError('');
 
     try {
+      // Step 1: Register user
       const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -174,10 +174,43 @@ export const Register = () => {
         return;
       }
 
+      // Step 2: Create profile with the token
+      const countryName = COUNTRIES.find(c => c.code === formData.country)?.name || formData.country;
+      const location = formData.city ? `${formData.city}, ${countryName}` : countryName;
+      
+      const profileResponse = await fetch(`${API_URL}/api/profiles`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${registerData.access_token}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          gender: formData.gender,
+          age: calculateAge(formData.dateOfBirth),
+          location: location,
+          height: formData.height,
+          education: formData.education,
+          occupation: formData.occupation,
+          religion: formData.religion,
+          bio: formData.bio || `Hi, I'm ${formData.name}. Looking forward to meeting new people!`,
+          looking_for: formData.lookingFor,
+          interests: []
+        })
+      });
+
+      if (!profileResponse.ok) {
+        const profileError = await profileResponse.json();
+        console.error('Profile creation failed:', profileError);
+        // Continue anyway - user is registered
+      }
+
       localStorage.setItem('token', registerData.access_token);
       localStorage.setItem('user', JSON.stringify(registerData.user));
       setStep(5);
     } catch (err) {
+      console.error('Registration error:', err);
       setError('Unable to connect to server. Please try again.');
     } finally {
       setLoading(false);
