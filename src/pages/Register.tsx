@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import { Eye, EyeOff, CheckCircle, Mail } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, Mail, Camera, X, Plus } from 'lucide-react';
 import { API_URL } from '../config';
 
 const COUNTRIES = [
@@ -56,6 +56,7 @@ for (let cm = 140; cm <= 210; cm++) {
 
 export const Register = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,6 +66,8 @@ export const Register = () => {
   const [generatedCode, setGeneratedCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [codeVerified, setCodeVerified] = useState(false);
+  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -80,7 +83,8 @@ export const Register = () => {
     occupation: '',
     religion: '',
     bio: '',
-    lookingFor: ''
+    lookingFor: '',
+    idealPartner: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -144,10 +148,34 @@ export const Register = () => {
     return age;
   };
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const remainingSlots = 6 - photos.length;
+    const filesToAdd = Array.from(files).slice(0, remainingSlots);
+
+    const newPhotos = filesToAdd.map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    setPhotos([...photos, ...newPhotos]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removePhoto = (index: number) => {
+    const newPhotos = [...photos];
+    URL.revokeObjectURL(newPhotos[index].preview);
+    newPhotos.splice(index, 1);
+    setPhotos(newPhotos);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!codeVerified) {
-      setError('Please verify your email first');
+    
+    if (photos.length === 0) {
+      setError('Please upload at least one photo');
       return;
     }
     
@@ -174,7 +202,9 @@ export const Register = () => {
         return;
       }
 
-      // Step 2: Create profile with the token
+      const token = registerData.access_token;
+
+      // Step 2: Create profile
       const countryName = COUNTRIES.find(c => c.code === formData.country)?.name || formData.country;
       const location = formData.city ? `${formData.city}, ${countryName}` : countryName;
       
@@ -182,7 +212,7 @@ export const Register = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${registerData.access_token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           name: formData.name,
@@ -196,29 +226,45 @@ export const Register = () => {
           religion: formData.religion,
           bio: formData.bio || `Hi, I'm ${formData.name}. Looking forward to meeting new people!`,
           looking_for: formData.lookingFor,
+          ideal_partner: formData.idealPartner,
           interests: []
         })
       });
 
       if (!profileResponse.ok) {
-        const profileError = await profileResponse.json();
-        console.error('Profile creation failed:', profileError);
-        // Continue anyway - user is registered
+        console.error('Profile creation failed');
       }
 
-      localStorage.setItem('token', registerData.access_token);
+      // Step 3: Upload photos
+      setUploadingPhotos(true);
+      for (const photo of photos) {
+        const photoFormData = new FormData();
+        photoFormData.append('file', photo.file);
+
+        await fetch(`${API_URL}/api/photos/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: photoFormData
+        });
+      }
+      setUploadingPhotos(false);
+
+      localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(registerData.user));
-      setStep(5);
+      setStep(6); // Success step
     } catch (err) {
       console.error('Registration error:', err);
       setError('Unable to connect to server. Please try again.');
     } finally {
       setLoading(false);
+      setUploadingPhotos(false);
     }
   };
 
-  // Success Page
-  if (step === 5) {
+  // Success Page (Step 6)
+  if (step === 6) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -228,7 +274,7 @@ export const Register = () => {
               <CheckCircle className="w-12 h-12 text-green-500" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to willubemin.com!</h2>
-            <p className="text-gray-600 mb-6">Your profile has been created successfully.</p>
+            <p className="text-gray-600 mb-6">Your profile has been created successfully with {photos.length} photo{photos.length > 1 ? 's' : ''}.</p>
             <button onClick={() => navigate('/')} className="w-full py-3 px-4 bg-rose-500 text-white rounded-md font-medium hover:bg-rose-600">
               Start Browsing Profiles
             </button>
@@ -250,20 +296,31 @@ export const Register = () => {
             
             <div className="flex justify-center mt-6">
               <div className="flex items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-rose-500 text-white' : 'bg-gray-200'}`}>1</div>
-                <div className={`w-12 h-1 ${step >= 2 ? 'bg-rose-500' : 'bg-gray-200'}`}></div>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-rose-500 text-white' : 'bg-gray-200'}`}>2</div>
-                <div className={`w-12 h-1 ${step >= 3 ? 'bg-rose-500' : 'bg-gray-200'}`}></div>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-rose-500 text-white' : 'bg-gray-200'}`}>3</div>
-                <div className={`w-12 h-1 ${step >= 4 ? 'bg-rose-500' : 'bg-gray-200'}`}></div>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 4 ? 'bg-rose-500 text-white' : 'bg-gray-200'}`}>4</div>
+                {[1, 2, 3, 4, 5].map((s, i) => (
+                  <React.Fragment key={s}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= s ? 'bg-rose-500 text-white' : 'bg-gray-200'}`}>{s}</div>
+                    {i < 4 && <div className={`w-8 h-1 ${step > s ? 'bg-rose-500' : 'bg-gray-200'}`}></div>}
+                  </React.Fragment>
+                ))}
               </div>
+            </div>
+            <div className="flex justify-center mt-2 text-xs text-gray-500">
+              <span className="w-10 text-center">Account</span>
+              <span className="w-8"></span>
+              <span className="w-10 text-center">Personal</span>
+              <span className="w-8"></span>
+              <span className="w-10 text-center">About</span>
+              <span className="w-8"></span>
+              <span className="w-10 text-center">Verify</span>
+              <span className="w-8"></span>
+              <span className="w-10 text-center">Photos</span>
             </div>
           </div>
 
           {error && <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
 
           <form onSubmit={handleSubmit}>
+            {/* Step 1: Account Details */}
             {step === 1 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Details</h3>
@@ -304,6 +361,7 @@ export const Register = () => {
               </div>
             )}
 
+            {/* Step 2: Personal Details */}
             {step === 2 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Details</h3>
@@ -315,6 +373,21 @@ export const Register = () => {
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Looking for *</label>
+                  <select name="lookingFor" value={formData.lookingFor} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="">Select preference</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Any">Any</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Describe your ideal partner</label>
+                  <textarea name="idealPartner" value={formData.idealPartner} onChange={handleChange} rows={3} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="e.g., Kind, intelligent, family-oriented, loves adventure..." />
                 </div>
 
                 <div>
@@ -358,6 +431,7 @@ export const Register = () => {
               </div>
             )}
 
+            {/* Step 3: About You */}
             {step === 3 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">About You</h3>
@@ -383,16 +457,6 @@ export const Register = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">I am looking for</label>
-                  <select name="lookingFor" value={formData.lookingFor} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
-                    <option value="">Select preference</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Any">Any</option>
-                  </select>
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-gray-700">About Me</label>
                   <textarea name="bio" value={formData.bio} onChange={handleChange} rows={4} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Tell potential matches about yourself..." />
                 </div>
@@ -404,6 +468,7 @@ export const Register = () => {
               </div>
             )}
 
+            {/* Step 4: Email Verification */}
             {step === 4 && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Verify Your Email</h3>
@@ -446,14 +511,88 @@ export const Register = () => {
                       Email verified successfully!
                     </div>
                     
-                    <button type="submit" disabled={loading} className="w-full py-3 px-4 bg-rose-500 text-white rounded-md hover:bg-rose-600 disabled:opacity-50">
-                      {loading ? 'Creating Profile...' : 'Create My Profile'}
+                    <button type="button" onClick={() => setStep(5)} className="w-full py-3 px-4 bg-rose-500 text-white rounded-md hover:bg-rose-600">
+                      Next: Upload Photos
                     </button>
                   </div>
                 )}
 
                 <button type="button" onClick={() => setStep(3)} className="w-full py-3 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
                   Back
+                </button>
+              </div>
+            )}
+
+            {/* Step 5: Photo Upload */}
+            {step === 5 && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Your Photos</h3>
+                
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Camera className="w-8 h-8 text-rose-500" />
+                  </div>
+                  <p className="text-gray-600">Upload at least 1 photo (maximum 6)</p>
+                  <p className="text-sm text-gray-500">Photos help you get more matches!</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  {photos.map((photo, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
+                      <img src={photo.preview} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      {index === 0 && (
+                        <span className="absolute bottom-1 left-1 bg-rose-500 text-white text-xs px-2 py-1 rounded">Main</span>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {photos.length < 6 && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center hover:border-rose-500 hover:bg-rose-50 transition-colors"
+                    >
+                      <Plus className="w-8 h-8 text-gray-400" />
+                      <span className="text-sm text-gray-500 mt-1">Add Photo</span>
+                    </button>
+                  )}
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setStep(4)} className="flex-1 py-3 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || photos.length === 0}
+                    className="flex-1 py-3 px-4 bg-rose-500 text-white rounded-md hover:bg-rose-600 disabled:opacity-50"
+                  >
+                    {loading ? (uploadingPhotos ? 'Uploading Photos...' : 'Creating Profile...') : 'Create My Profile'}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="w-full py-2 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Cancel Registration
                 </button>
               </div>
             )}
