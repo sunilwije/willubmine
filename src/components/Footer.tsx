@@ -1,60 +1,62 @@
 import React from 'react';
-import { Heart, Facebook, Twitter, Instagram, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Heart, MessageSquare } from 'lucide-react';
 
 export const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white pt-12 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="h-6 w-6 text-rose-500 fill-current" />
-              <span className="font-bold text-xl tracking-tight">
-                willubemin<span className="text-rose-500">.com</span>
-              </span>
+    <footer className="bg-gray-900 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid md:grid-cols-4 gap-8">
+          <div>
+            <div className="flex items-center space-x-2 mb-4">
+              <Heart className="h-6 w-6 text-rose-500 fill-rose-500" />
+              <span className="text-xl font-bold">willubemin.com</span>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              A 100% free matrimonial and dating platform dedicated to helping youth worldwide find their perfect match. We believe love is a fundamental right.
+            <p className="text-gray-400 text-sm">
+              The world's first 100% free matrimonial platform for youth worldwide.
             </p>
           </div>
-
+          
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-rose-500">Quick Links</h3>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-white transition-colors">Home</a></li>
-              <li><a href="#browse" className="hover:text-white transition-colors">Browse Profiles</a></li>
-              <li><a href="#about" className="hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#success-stories" className="hover:text-white transition-colors">Success Stories</a></li>
+            <h3 className="font-semibold mb-4">Quick Links</h3>
+            <ul className="space-y-2 text-gray-400 text-sm">
+              <li><Link to="/" className="hover:text-rose-500">Home</Link></li>
+              <li><Link to="/#browse" className="hover:text-rose-500">Browse Profiles</Link></li>
+              <li><Link to="/register" className="hover:text-rose-500">Create Profile</Link></li>
+              <li><Link to="/login" className="hover:text-rose-500">Login</Link></li>
             </ul>
           </div>
-
+          
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-rose-500">Legal</h3>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Safety Tips</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Community Guidelines</a></li>
+            <h3 className="font-semibold mb-4">Support</h3>
+            <ul className="space-y-2 text-gray-400 text-sm">
+              <li><Link to="/suggestions" className="hover:text-rose-500 flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Suggestions & Feedback
+              </Link></li>
+              <li><a href="mailto:support@willubemin.com" className="hover:text-rose-500">Contact Us</a></li>
+              <li><Link to="/privacy" className="hover:text-rose-500">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-rose-500">Terms of Service</Link></li>
             </ul>
           </div>
-
+          
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-rose-500">Connect With Us</h3>
-            <div className="flex space-x-4 mb-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Facebook className="h-5 w-5" /></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Twitter className="h-5 w-5" /></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Instagram className="h-5 w-5" /></a>
-            </div>
-            <div className="flex items-center gap-2 text-gray-400 text-sm">
-              <Mail className="h-4 w-4" />
-              <span>support@willubemin.com</span>
-            </div>
+            <h3 className="font-semibold mb-4">We Value Your Input</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              Help us improve! Share your suggestions, report issues, or request new features.
+            </p>
+            <Link 
+              to="/suggestions" 
+              className="inline-flex items-center gap-2 bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition-colors"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Send Suggestion
+            </Link>
           </div>
         </div>
-
-        <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} willubemin.com. All rights reserved.</p>
-          <p className="mt-2 text-xs">"Marriage is a fundamental right of any human being."</p>
+        
+        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
+          <p>&copy; {new Date().getFullYear()} willubemin.com. All rights reserved. Made with ❤️ for love seekers worldwide.</p>
         </div>
       </div>
     </footer>
