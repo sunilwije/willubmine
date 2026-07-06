@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Heart, MessageCircle, Search } from 'lucide-react';
+import { Menu, X, Heart, MessageCircle } from 'lucide-react';
 
 export const Header = () => {
   const navigate = useNavigate();
@@ -25,20 +25,20 @@ export const Header = () => {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* Logo - Fixed spelling: willubmine.com */}
           <Link to="/" className="flex items-center space-x-2">
             <Heart className="h-8 w-8 text-rose-500 fill-rose-500" />
             <span className="text-xl font-bold">
-              <span className="text-gray-900">willubem</span>
-              <span className="text-rose-500">in.com</span>
+              <span className="text-gray-900">willubm</span>
+              <span className="text-rose-500">ine.com</span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-rose-500 font-medium">Home</Link>
-            <Link to="/#browse" className="text-gray-600 hover:text-rose-500 font-medium">Browse Profiles</Link>
-            <Link to="/chat" className="flex items-center text-gray-600 hover:text-rose-500 font-medium">
+            <Link to="/browse" className="text-gray-600 hover:text-rose-500 font-medium">Browse Profiles</Link>
+            <Link to="/messages" className="flex items-center text-gray-600 hover:text-rose-500 font-medium">
               <MessageCircle className="h-4 w-4 mr-1" />
               Messages
             </Link>
@@ -85,8 +85,8 @@ export const Header = () => {
           <div className="md:hidden py-4 border-t">
             <nav className="flex flex-col space-y-4">
               <Link to="/" className="text-rose-500 font-medium" onClick={() => setIsMenuOpen(false)}>Home</Link>
-              <Link to="/#browse" className="text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Browse Profiles</Link>
-              <Link to="/chat" className="text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Messages</Link>
+              <Link to="/browse" className="text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Browse Profiles</Link>
+              <Link to="/messages" className="text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Messages</Link>
               {user ? (
                 <>
                   <span className="text-gray-600">Hi, {user.name}</span>

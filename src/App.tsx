@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Home } from './pages/Home';
+import { Browse } from './pages/Browse';
+import { Messages } from './pages/Messages';
 import { Chat } from './pages/Chat';
 import { CreateProfile } from './pages/CreateProfile';
 import { VerifyMember } from './pages/VerifyMember';
@@ -12,7 +14,10 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/browse" element={<Browse />} />
+      <Route path="/messages" element={<Messages />} />
       <Route path="/chat" element={<Chat />} />
+      <Route path="/chat/:id" element={<Chat />} />
       <Route path="/create-profile" element={<CreateProfile />} />
       <Route path="/verify/:id" element={<VerifyMember />} />
       <Route path="/login" element={<Login />} />
