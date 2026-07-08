@@ -16,15 +16,15 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onClick }) =>
       className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer group border border-gray-100"
       onClick={() => onClick(profile)}
     >
-      <div className="relative h-64 overflow-hidden">
+      <div className="relative h-72 overflow-hidden">
         <img 
           src={imageUrl} 
           alt={profile.name} 
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-          <h3 className="text-white text-xl font-bold">{profile.name}, {profile.age}</h3>
-          <div className="flex items-center text-white/90 text-sm mt-1">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent pt-12 pb-3 px-4">
+          <h3 className="text-white text-xl font-bold drop-shadow-md">{profile.name}, {profile.age}</h3>
+          <div className="flex items-center text-white text-sm mt-1 drop-shadow-md">
             <MapPin className="h-3 w-3 mr-1" />
             <span className="truncate">{profile.location}</span>
           </div>
