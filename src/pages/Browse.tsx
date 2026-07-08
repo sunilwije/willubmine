@@ -276,7 +276,7 @@ export const Browse = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/interests`, {
+      const response = await fetch(`${API_URL}/api/interests/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
