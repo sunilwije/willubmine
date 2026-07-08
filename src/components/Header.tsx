@@ -1,16 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Heart, MessageCircle } from 'lucide-react';
+import { Menu, X, Heart, MessageCircle, User } from 'lucide-react';
+import { API_URL } from '../config';
 
 export const Header = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
-      setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      
+      // Fetch user's profile to get photo
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch(`${API_URL}/api/profiles/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+          .then(res => res.ok ? res.json() : null)
+          .then(profile => {
+            if (profile && (profile.image || profile.photos?.[0])) {
+              setUserPhoto(profile.image || profile.photos[0]);
+            }
+          })
+          .catch(() => {});
+      }
     }
   }, []);
 
@@ -18,6 +36,7 @@ export const Header = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setUserPhoto(null);
     navigate('/');
   };
 
@@ -48,7 +67,20 @@ export const Header = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
-                <span className="text-gray-600">Hi, {user.name}</span>
+                <div className="flex items-center space-x-2">
+                  {userPhoto ? (
+                    <img 
+                      src={userPhoto} 
+                      alt={user.name} 
+                      className="w-8 h-8 rounded-full object-cover object-top border-2 border-rose-200"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center">
+                      <User className="w-4 h-4 text-rose-500" />
+                    </div>
+                  )}
+                  <span className="text-gray-600">Hi, {user.name}</span>
+                </div>
                 <button
                   onClick={handleLogout}
                   className="text-gray-600 hover:text-rose-500 font-medium"
@@ -89,7 +121,20 @@ export const Header = () => {
               <Link to="/messages" className="text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Messages</Link>
               {user ? (
                 <>
-                  <span className="text-gray-600">Hi, {user.name}</span>
+                  <div className="flex items-center space-x-2">
+                    {userPhoto ? (
+                      <img 
+                        src={userPhoto} 
+                        alt={user.name} 
+                        className="w-8 h-8 rounded-full object-cover object-top border-2 border-rose-200"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center">
+                        <User className="w-4 h-4 text-rose-500" />
+                      </div>
+                    )}
+                    <span className="text-gray-600">Hi, {user.name}</span>
+                  </div>
                   <button onClick={handleLogout} className="text-left text-gray-600 font-medium">Log Out</button>
                 </>
               ) : (
