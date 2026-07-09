@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Search, MapPin, Heart, X, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -225,6 +226,7 @@ interface Profile {
 }
 
 export const Browse = () => {
+  const [searchParams] = useSearchParams();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
@@ -240,6 +242,29 @@ export const Browse = () => {
   useEffect(() => {
     fetchProfiles();
   }, []);
+
+  // Handle viewProfile query parameter from notification click
+  useEffect(() => {
+    const viewProfileId = searchParams.get("viewProfile");
+    if (viewProfileId && profiles.length > 0) {
+      const profile = profiles.find(p => p.id === viewProfileId);
+      if (profile) {
+        setSelectedProfile(profile);
+        setCurrentPhotoIndex(0);
+      } else {
+        // Profile not in list, fetch it directly
+        fetch(API_URL + "/api/profiles/" + viewProfileId)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data) {
+              setSelectedProfile(data);
+              setCurrentPhotoIndex(0);
+            }
+          })
+          .catch(err => console.error("Failed to fetch profile:", err));
+      }
+    }
+  }, [searchParams, profiles]);
 
   const fetchProfiles = async () => {
     setLoading(true);
