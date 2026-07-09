@@ -236,7 +236,7 @@ export const MyProfile: React.FC = () => {
         {/* Profile Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Cover Photo / Main Photo */}
-          <div className="relative h-80 bg-gradient-to-br from-rose-400 to-pink-500">
+          <div className="relative h-96 bg-gradient-to-br from-rose-400 to-pink-500">
             {profile.image && (
               <img
                 src={profile.image}
