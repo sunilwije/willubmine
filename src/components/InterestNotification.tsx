@@ -62,7 +62,7 @@ export const InterestNotification: React.FC = () => {
             // Auto-hide after 30 seconds
             setTimeout(function() {
               setVisible(false);
-            }, 30000);
+            }, 60000);
           }
         }
       } catch (err) {
