@@ -246,7 +246,7 @@ export const MyProfile: React.FC = () => {
             )}
             <button
               className="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-700 px-4 py-2 rounded-full flex items-center gap-2 font-medium shadow-sm transition-colors"
-              onClick={function() { alert('Edit profile coming soon!'); }}
+              onClick={function() { navigate('/edit-profile'); }}
             >
               <Edit2 className="w-4 h-4" />
               Edit Profile
