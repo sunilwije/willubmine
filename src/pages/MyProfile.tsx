@@ -241,7 +241,7 @@ export const MyProfile: React.FC = () => {
               <img
                 src={profile.image}
                 alt={profile.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-top"
               />
             )}
             <button
@@ -330,7 +330,7 @@ export const MyProfile: React.FC = () => {
                         key={index}
                         src={photo}
                         alt={'Photo ' + (index + 1)}
-                        className="w-full aspect-square object-cover rounded-lg"
+                        className="w-full aspect-square object-cover object-top rounded-lg"
                       />
                     );
                   })}
