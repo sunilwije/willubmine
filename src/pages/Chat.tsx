@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -22,10 +22,11 @@ interface MatchProfile {
   location?: string;
 }
 
-export const Chat = () => {
+export const Chat: React.FC = () => {
   const { id: matchId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<Message[]>([]);
   
   const [matchProfile, setMatchProfile] = useState<MatchProfile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -34,6 +35,58 @@ export const Chat = () => {
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
+  // Keep messagesRef in sync
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
+
+  const fetchMatchProfile = useCallback(async () => {
+    if (!matchId) return;
+    try {
+      const response = await fetch(API_URL + '/api/profiles/' + matchId);
+      if (response.ok) {
+        const data = await response.json();
+        setMatchProfile(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+    }
+  }, [matchId]);
+
+  const fetchMessages = useCallback(async (showLoading: boolean) => {
+    if (!matchId) return;
+    if (showLoading) setLoading(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await fetch(API_URL + '/api/messages/' + matchId, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const reversed = data.slice().reverse();
+        // Only update if message count changed
+        if (reversed.length !== messagesRef.current.length) {
+          setMessages(reversed);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch messages:', err);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, [matchId]);
+
+  // Initial load
   useEffect(() => {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
@@ -44,87 +97,37 @@ export const Chat = () => {
     }
     
     if (user) {
-      const userData = JSON.parse(user);
-      setCurrentUserId(userData.id);
+      try {
+        const userData = JSON.parse(user);
+        setCurrentUserId(userData.id);
+      } catch (e) {
+        console.error('Failed to parse user data');
+      }
     }
     
     if (matchId) {
       fetchMatchProfile();
-      fetchMessages();
+      fetchMessages(true);
     }
-  }, [matchId, navigate]);
+  }, [matchId, navigate, fetchMatchProfile, fetchMessages]);
 
   // Auto-poll for new messages every 5 seconds
   useEffect(() => {
-    if (!matchId) return;
+    if (!matchId) return undefined;
     
-    const interval = setInterval(() => {
-      fetchMessagesQuiet();
+    const interval = setInterval(function() {
+      fetchMessages(false);
     }, 5000);
     
-    return () => clearInterval(interval);
-  }, [matchId]);
+    return function() {
+      clearInterval(interval);
+    };
+  }, [matchId, fetchMessages]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const fetchMatchProfile = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/profiles/${matchId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setMatchProfile(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch profile:', err);
-    }
-  };
-
-  const fetchMessages = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/messages/${matchId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        // Reverse to show oldest first
-        setMessages(data.reverse());
-      }
-    } catch (err) {
-      console.error('Failed to fetch messages:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Quiet fetch without loading indicator (for polling)
-  const fetchMessagesQuiet = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/messages/${matchId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const newMessages = data.reverse();
-        // Only update if there are new messages
-        if (newMessages.length !== messages.length) {
-          setMessages(newMessages);
-        }
-      }
-    } catch (err) {
-      // Silent fail for polling
-    }
-  };
+  }, [messages, scrollToBottom]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,11 +136,11 @@ export const Chat = () => {
     setSending(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/messages/`, {
+      const response = await fetch(API_URL + '/api/messages/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify({
           recipient_id: matchId,
@@ -147,7 +150,9 @@ export const Chat = () => {
 
       if (response.ok) {
         const sentMessage = await response.json();
-        setMessages([...messages, sentMessage]);
+        setMessages(function(prev) {
+          return prev.concat([sentMessage]);
+        });
         setNewMessage('');
       } else {
         const error = await response.json();
@@ -161,12 +166,12 @@ export const Chat = () => {
     }
   };
 
-  const formatTime = (dateString: string) => {
+  const formatTime = function(dateString: string) {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = function(dateString: string) {
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
@@ -181,6 +186,10 @@ export const Chat = () => {
     }
   };
 
+  const getMessageKey = function(message: Message, index: number) {
+    return message.id || message._id || 'msg-' + index;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -189,7 +198,7 @@ export const Chat = () => {
         {/* Chat Header */}
         <div className="bg-white rounded-t-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
           <button 
-            onClick={() => navigate('/messages')}
+            onClick={function() { navigate('/messages'); }}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -230,33 +239,32 @@ export const Chat = () => {
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">Start the conversation!</h3>
               <p className="text-gray-500 text-sm">
-                Say hello to {matchProfile?.name || 'your match'}
+                Say hello to {matchProfile ? matchProfile.name : 'your match'}
               </p>
             </div>
           ) : (
             <>
-              {messages.map((message, index) => {
+              {messages.map(function(message, index) {
                 const isMe = message.sender_id === currentUserId;
                 const showDate = index === 0 || 
                   formatDate(message.created_at) !== formatDate(messages[index - 1].created_at);
                 
                 return (
-                  <React.Fragment key={message.id || message._id || index}>
+                  <React.Fragment key={getMessageKey(message, index)}>
                     {showDate && (
                       <div className="text-center text-xs text-gray-500 my-4">
                         {formatDate(message.created_at)}
                       </div>
                     )}
-                    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div className={isMe ? 'flex justify-end' : 'flex justify-start'}>
                       <div
-                        className={`max-w-[70%] px-4 py-2 rounded-2xl ${
-                          isMe
-                            ? 'bg-rose-500 text-white rounded-br-md'
-                            : 'bg-gray-100 text-gray-900 rounded-bl-md'
-                        }`}
+                        className={isMe 
+                          ? 'max-w-[70%] px-4 py-2 rounded-2xl bg-rose-500 text-white rounded-br-md'
+                          : 'max-w-[70%] px-4 py-2 rounded-2xl bg-gray-100 text-gray-900 rounded-bl-md'
+                        }
                       >
                         <p>{message.content}</p>
-                        <p className={`text-xs mt-1 ${isMe ? 'text-rose-200' : 'text-gray-500'}`}>
+                        <p className={isMe ? 'text-xs mt-1 text-rose-200' : 'text-xs mt-1 text-gray-500'}>
                           {formatTime(message.created_at)}
                         </p>
                       </div>
@@ -277,7 +285,7 @@ export const Chat = () => {
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={function(e) { setNewMessage(e.target.value); }}
             placeholder="Type a message..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-rose-500 focus:border-rose-500"
           />
