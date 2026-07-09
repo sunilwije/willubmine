@@ -3,36 +3,39 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Heart, MessageCircle, User } from 'lucide-react';
 import { API_URL } from '../config';
 
-export const Header = () => {
+export const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
 
-  useEffect(() => {
+  useEffect(function() {
     const userData = localStorage.getItem('user');
     if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-      
-      // Fetch user's profile to get photo
-      const token = localStorage.getItem('token');
-      if (token) {
-        fetch(`${API_URL}/api/profiles/me`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-          .then(res => res.ok ? res.json() : null)
-          .then(profile => {
-            if (profile && (profile.image || profile.photos?.[0])) {
-              setUserPhoto(profile.image || profile.photos[0]);
-            }
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        
+        const token = localStorage.getItem('token');
+        if (token) {
+          fetch(API_URL + '/api/profiles/me', {
+            headers: { 'Authorization': 'Bearer ' + token }
           })
-          .catch(() => {});
+            .then(function(res) { return res.ok ? res.json() : null; })
+            .then(function(profile) {
+              if (profile && (profile.image || (profile.photos && profile.photos[0]))) {
+                setUserPhoto(profile.image || profile.photos[0]);
+              }
+            })
+            .catch(function() {});
+        }
+      } catch (e) {
+        console.error('Failed to parse user data');
       }
     }
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = function() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
@@ -44,7 +47,6 @@ export const Header = () => {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo - Fixed spelling: willubmine.com */}
           <Link to="/" className="flex items-center space-x-2">
             <Heart className="h-8 w-8 text-rose-500 fill-rose-500" />
             <span className="text-xl font-bold">
@@ -53,21 +55,27 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-rose-500 font-medium">Home</Link>
             <Link to="/browse" className="text-gray-600 hover:text-rose-500 font-medium">Browse Profiles</Link>
-            <Link to="/messages" className="flex items-center text-gray-600 hover:text-rose-500 font-medium">
-              <MessageCircle className="h-4 w-4 mr-1" />
-              Messages
-            </Link>
+            {user && (
+              <>
+                <Link to="/messages" className="flex items-center text-gray-600 hover:text-rose-500 font-medium">
+                  <MessageCircle className="h-4 w-4 mr-1" />
+                  Messages
+                </Link>
+                <Link to="/my-profile" className="flex items-center text-gray-600 hover:text-rose-500 font-medium">
+                  <User className="h-4 w-4 mr-1" />
+                  My Profile
+                </Link>
+              </>
+            )}
           </nav>
 
-          {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
-                <div className="flex items-center space-x-2">
+                <Link to="/my-profile" className="flex items-center space-x-2 hover:opacity-80">
                   {userPhoto ? (
                     <img 
                       src={userPhoto} 
@@ -80,7 +88,7 @@ export const Header = () => {
                     </div>
                   )}
                   <span className="text-gray-600">Hi, {user.name}</span>
-                </div>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="text-gray-600 hover:text-rose-500 font-medium"
@@ -103,25 +111,24 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={function() { setIsMenuOpen(!isMenuOpen); }}
             className="md:hidden p-2 rounded-md text-gray-600 hover:text-rose-500"
           >
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
 
-        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t">
             <nav className="flex flex-col space-y-4">
-              <Link to="/" className="text-rose-500 font-medium" onClick={() => setIsMenuOpen(false)}>Home</Link>
-              <Link to="/browse" className="text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Browse Profiles</Link>
-              <Link to="/messages" className="text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Messages</Link>
+              <Link to="/" className="text-rose-500 font-medium" onClick={function() { setIsMenuOpen(false); }}>Home</Link>
+              <Link to="/browse" className="text-gray-600 font-medium" onClick={function() { setIsMenuOpen(false); }}>Browse Profiles</Link>
               {user ? (
                 <>
-                  <div className="flex items-center space-x-2">
+                  <Link to="/messages" className="text-gray-600 font-medium" onClick={function() { setIsMenuOpen(false); }}>Messages</Link>
+                  <Link to="/my-profile" className="text-gray-600 font-medium" onClick={function() { setIsMenuOpen(false); }}>My Profile</Link>
+                  <div className="flex items-center space-x-2 pt-2 border-t">
                     {userPhoto ? (
                       <img 
                         src={userPhoto} 
@@ -139,8 +146,8 @@ export const Header = () => {
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Log In</Link>
-                  <Link to="/register" className="text-rose-500 font-medium" onClick={() => setIsMenuOpen(false)}>Join Free</Link>
+                  <Link to="/login" className="text-gray-600 font-medium" onClick={function() { setIsMenuOpen(false); }}>Log In</Link>
+                  <Link to="/register" className="text-rose-500 font-medium" onClick={function() { setIsMenuOpen(false); }}>Join Free</Link>
                 </>
               )}
             </nav>
