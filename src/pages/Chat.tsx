@@ -54,6 +54,17 @@ export const Chat = () => {
     }
   }, [matchId, navigate]);
 
+  // Auto-poll for new messages every 5 seconds
+  useEffect(() => {
+    if (!matchId) return;
+    
+    const interval = setInterval(() => {
+      fetchMessagesQuiet();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [matchId]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -91,6 +102,27 @@ export const Chat = () => {
       console.error('Failed to fetch messages:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Quiet fetch without loading indicator (for polling)
+  const fetchMessagesQuiet = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/messages/${matchId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const newMessages = data.reverse();
+        // Only update if there are new messages
+        if (newMessages.length !== messages.length) {
+          setMessages(newMessages);
+        }
+      }
+    } catch (err) {
+      // Silent fail for polling
     }
   };
 
@@ -209,7 +241,7 @@ export const Chat = () => {
                   formatDate(message.created_at) !== formatDate(messages[index - 1].created_at);
                 
                 return (
-                  <React.Fragment key={message._id || message.id || index}>
+                  <React.Fragment key={message.id || message._id || index}>
                     {showDate && (
                       <div className="text-center text-xs text-gray-500 my-4">
                         {formatDate(message.created_at)}
@@ -263,4 +295,3 @@ export const Chat = () => {
     </div>
   );
 };
-// Updated Thu Jul  9 00:30:10 EDT 2026
