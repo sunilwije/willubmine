@@ -59,7 +59,7 @@ export const InterestNotification: React.FC = () => {
             setSeenIds(newSeenIds);
             localStorage.setItem('seenInterestIds', JSON.stringify(Array.from(newSeenIds)));
 
-            // Auto-hide after 30 seconds
+            // Auto-hide after 60 seconds (will change to 45 later)
             setTimeout(function() {
               setVisible(false);
             }, 60000);
@@ -81,14 +81,16 @@ export const InterestNotification: React.FC = () => {
     };
   }, [seenIds]);
 
-  const handleClose = function() {
+  const handleClose = function(e: React.MouseEvent) {
+    e.stopPropagation();
     setVisible(false);
   };
 
   const handleClick = function() {
     if (notification) {
       setVisible(false);
-      navigate('/my-profile');
+      // Navigate to browse with the profile ID to view their profile
+      navigate('/browse?viewProfile=' + notification.id);
     }
   };
 
@@ -97,27 +99,29 @@ export const InterestNotification: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
-      <div className="bg-white rounded-xl shadow-2xl border border-rose-200 p-4 max-w-xs flex items-center gap-3">
+    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+      <div 
+        onClick={handleClick}
+        className="bg-gradient-to-r from-rose-500 to-pink-500 rounded-xl shadow-2xl p-4 flex items-center gap-4 cursor-pointer hover:scale-105 transition-transform"
+      >
         <img
-          src={notification.image || 'https://via.placeholder.com/48'}
+          src={notification.image || 'https://via.placeholder.com/56'}
           alt={notification.name}
-          onClick={handleClick}
-          className="w-12 h-12 rounded-full object-cover object-top cursor-pointer hover:ring-2 hover:ring-rose-500 flex-shrink-0"
+          className="w-14 h-14 rounded-full object-cover object-top border-2 border-white flex-shrink-0"
         />
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={handleClick}>
-          <div className="flex items-center gap-1 text-rose-500 text-xs font-medium mb-0.5">
-            <Heart className="w-3 h-3 fill-rose-500" />
+        <div className="flex-1 min-w-0 text-white">
+          <div className="flex items-center gap-1 text-rose-100 text-xs font-medium mb-0.5">
+            <Heart className="w-3 h-3 fill-white" />
             New Interest!
           </div>
-          <p className="font-semibold text-gray-900 truncate">{notification.name}</p>
-          <p className="text-gray-500 text-xs">is interested in you</p>
+          <p className="font-bold text-lg truncate">{notification.name}</p>
+          <p className="text-rose-100 text-sm">is interested in you! Click to view profile</p>
         </div>
         <button
           onClick={handleClose}
-          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full flex-shrink-0"
+          className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-full flex-shrink-0"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
       </div>
     </div>
